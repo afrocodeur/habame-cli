@@ -1,12 +1,9 @@
-import Fs from 'node:fs';
 import { WebSocketServer } from 'ws';
+
 import Logger from "../../Logger/Logger.js";
-
-import Path from 'node:path';
-import Url from 'node:url';
 import ScriptCodeBuilder from "../../Builder/ScriptCodeBuilder.js";
+import FileSystem from "../../../helpers/FileSystem.js";
 
-const __dirname = Path.dirname(Url.fileURLToPath(import.meta.url));
 
 /**
  *
@@ -40,7 +37,9 @@ const WsServer =  function($config, $builder) {
     };
 
     this.getClientCode = () => {
-        let clientCode = Fs.readFileSync(__dirname +'/codeClient.js', 'utf8');
+        let clientCodePath = FileSystem.pathFromRoot('templates/server/ws-code-client.js.template', 'utf8');
+        let clientCode = FileSystem.getContent(clientCodePath);
+
         const vars = {
             host: $config.getHost(),
             port: $config.getWsServerPort()

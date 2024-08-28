@@ -3,26 +3,22 @@ import resolve from '@rollup/plugin-node-resolve';
 import babel from '@rollup/plugin-babel';
 import Logger from "../Logger/Logger.js";
 
-const devOutputConfigs = [
-    {
-        format: 'es',
-    },
-];
+const devOutputConfigs = {
+    format: 'es',
+};
 
 const inputOptions = {
     plugins: [
         babel({
             babelHelpers: 'bundled',
-            exclude: ['node_modules/**']
+            exclude: []
         }),
-        // commonjs(),
         resolve(),
     ],
     onwarn: function(message) {
         if(message.code === 'UNKNOWN_OPTION') {
             return false;
         }
-        // Logger.warning(message);
     }
 };
 
@@ -38,7 +34,9 @@ const RollupBuilder = function() {
             // create a bundle
             bundle = await rollup(inputOptions);
 
-            const response = await bundle.generate(outputConfigs || devOutputConfigs);
+            const outputOption = outputConfigs ? { ...devOutputConfigs, ...outputConfigs } : { ...devOutputConfigs };
+
+            const response = await bundle.generate(outputOption);
             outputResponse = response.output;
         } catch (error) {
             buildFailed = true;

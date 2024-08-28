@@ -4,6 +4,8 @@ import Path from 'node:path';
 import Logger from "../Logger/Logger.js";
 import CustomRequire from "../../helpers/CustomRequire.js";
 import DefaultProjectConfig from "../../constants/DefaultProjectConfig.js";
+import FileSystem from "../../helpers/FileSystem.js";
+import BuildConfig from "./BuildConfig.js";
 
 const ProjectConfig =  function() {
 
@@ -11,20 +13,26 @@ const ProjectConfig =  function() {
     let $data = {};
 
     this.exists = (configFile) => {
-        return Fs.existsSync(configFile);
+        return FileSystem.existInCwd(configFile);
     };
 
-    this.setConfigFile = async (configFile) => {
+    this.setConfigFile = async (configFile, watch = true) => {
         if($configFile) {
             return;
         }
         Logger.info('Chargement de la configuration du projet ');
-        $configFile = Path.resolve(configFile);
+        $configFile = FileSystem.pathFromCwd(configFile);
 
-        Fs.watchFile(configFile, async () => {
-            return this.load();
-        });
+        if(watch) {
+            Fs.watchFile(configFile, async () => {
+                return this.load();
+            });
+        }
         return this.load();
+    };
+
+    this.getBuildConfig = function() {
+        return new BuildConfig($data.build ||  {});
     };
 
     this.load = async () => {
@@ -41,6 +49,10 @@ const ProjectConfig =  function() {
 
     this.getEntryHtml = () => {
         return Path.resolve($data.entry?.html || DefaultProjectConfig.entry.html);
+    };
+
+    this.getAssetsPath = () => {
+        return Path.resolve($data.entry?.assets || DefaultProjectConfig.entry.assets);
     };
 
     this.getEntryMain = () => {
@@ -67,7 +79,7 @@ const ProjectConfig =  function() {
         if($data.plugins[extension]) {
             return [
                 ...($data.plugins ? $data.plugins[extension] : []),
-                ...DefaultProjectConfig.plugins[extension]
+                ...(DefaultProjectConfig.plugins[extension] ? DefaultProjectConfig.plugins[extension] : [])
             ];
         }
         return DefaultProjectConfig.plugins[extension];

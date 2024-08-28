@@ -7,19 +7,19 @@ import addToExistingModule from "./helper.js";
 
 const generateHtmlFile = function(filePath, name) {
     Fs.writeFileSync(filePath, "<div>\n\t"+ name +" Component\n</div>", { flag: 'w+' });
-    Logger.success(`----> ${name}.html`);
+    Logger.success(`----> ${name}.template.html`);
 };
 const generateCssFile = function(filePath, name) {
     Fs.writeFileSync(filePath, '', { flag: 'w+' });
-    Logger.success(`----> ${name}.hb.css`);
+    Logger.success(`----> ${name}.scss`);
 };
 const generateJsFile = function(filePath, name) {
     const nameInKebabCase = StringHelper.kebabCase(name);
     const exportCode = [
         '\tname: "'+ name +'"',
         '\tcontroller: '+ name,
-        '\ttemplateUrl: "'+ nameInKebabCase +'.html"',
-        '\tstyleUrl: "'+ nameInKebabCase +'.hb.css"'
+        '\ttemplateUrl: "'+ nameInKebabCase +'.template.html"',
+        '\tstyleUrl: "'+ nameInKebabCase +'.scss"'
     ].join(',\n');
 
     Fs.writeFileSync(filePath, `const ${name} = function({ State, Actions }) {\n\t\n};\nexport default {\n${exportCode}\n}`, { flag: 'w+' });
@@ -53,8 +53,8 @@ const componentGenerator = function($name, $argv) {
 
     Logger.info(`Generate ${filename} component source`);
     generateJsFile(filePathAndBasename + '.hb.js', filename);
-    generateHtmlFile(filePathAndBasenameInKebabCase + '.html', filenameInKebabCase);
-    generateCssFile(filePathAndBasenameInKebabCase + '.hb.css', filenameInKebabCase);
+    generateHtmlFile(filePathAndBasenameInKebabCase + '.template.html', filenameInKebabCase);
+    generateCssFile(filePathAndBasenameInKebabCase + '.scss', filenameInKebabCase);
     addToExistingModule(componentDir, filename+ '.hb.js', updateExistingModule);
     Logger.info(`----> In ${dirname}`);
 

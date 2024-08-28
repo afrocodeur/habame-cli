@@ -4,13 +4,14 @@ import ProjectConfig from "../../modules/ProjectConfig/ProjectConfig.js";
 import Logger from "../../modules/Logger/Logger.js";
 import HabameProjectLiveBuilder from "../../modules/Builder/HabameProjectLiveBuilder.js";
 import WsServer from "../../modules/Servers/WsServer/WsServer.js";
+import {PROJECT_CONFIG_FILE_NAME} from "../../constants/App.js";
 
 /**
  *
  * @param {CommandArgValues} argv
  * @constructor
  */
-const StartCommand = function($argv) {
+const Start = function($argv) {
 
     const $projectConfig = new ProjectConfig();
     const $projectBuilder = new HabameProjectLiveBuilder($projectConfig);
@@ -23,13 +24,12 @@ const StartCommand = function($argv) {
             Logger.error('Hostpot is Activated');
         }
 
-        const configFile = 'hb.config.js';
-        if(!$projectConfig.exists(configFile)) {
-            Logger.info(configFile);
+        if(!$projectConfig.exists(PROJECT_CONFIG_FILE_NAME)) {
+            Logger.info(PROJECT_CONFIG_FILE_NAME);
             Logger.error('project configuration not found');
             return;
         }
-        await $projectConfig.setConfigFile(configFile);
+        await $projectConfig.setConfigFile(PROJECT_CONFIG_FILE_NAME);
 
         $wsServer.serve();
         await $httpServer.serve();
@@ -39,8 +39,8 @@ const StartCommand = function($argv) {
 
 };
 
-StartCommand.signature = '';
-StartCommand.description = '';
-StartCommand.help = '';
+Start.signature = '';
+Start.description = '';
+Start.help = '';
 
-export default StartCommand;
+export default Start;

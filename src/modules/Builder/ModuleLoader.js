@@ -34,19 +34,21 @@ const ModuleLoader = function($scriptBuilder) {
         data.directives && sourceFiles.push(...data.directives);
 
         if(sourceFiles.length) {
-            this.registerSourceFiles(dirname, sourceFiles);
+            await this.registerSourceFiles(dirname, sourceFiles);
         }
     }
 
-    this.registerSourceFiles = (dirname, files) => {
+    this.registerSourceFiles = async (dirname, files) => {
+        const registerPromises = [];
         files.forEach((filename) => {
             const filePath = Path.resolve(dirname, filename);
             if($caches.fileSources[filePath]) {
                 return;
             }
-            $scriptBuilder.addSourceFile(filePath);
+            registerPromises.push($scriptBuilder.addSourceFile(filePath));
             $caches.fileSources[filePath] = { filename };
         });
+        await Promise.all(registerPromises);
         this.cleanSourceFileCache(files);
     };
 

@@ -1,13 +1,8 @@
-import StartCommand from "./start/StartCommand.js";
 import CommandArgValues from "./CommandArgValues.js";
-import GenerateCommand from "./generate/GenerateCommand.js";
+import { COMMANDS } from "./CommandList.js";
 
 
-const COMMANDS = {
-    start: StartCommand,
-    generate: GenerateCommand,
-    s: StartCommand
-};
+
 
 const CommandHandler = function() {
 
@@ -37,7 +32,7 @@ const CommandHandler = function() {
     };
 
     this.showHelp = () => {
-        console.log('Affichage de l aide');
+        console.log('Show help ^^');
     };
 
 };

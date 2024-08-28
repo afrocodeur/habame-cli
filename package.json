@@ -1,6 +1,7 @@
 {
   "name": "habame-cli",
-  "version": "1.0.0",
+  "private": true,
+  "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -14,8 +15,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@babel/preset-env": "^7.25.4",
+    "@rollup/plugin-terser": "^0.4.4",
     "cheerio": "^1.0.0-rc.12",
     "rollup": "^4.18.0",
+    "terser": "^5.31.6",
     "ws": "^8.17.0"
   },
   "devDependencies": {
@@ -23,6 +27,7 @@
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
-    "@rollup/plugin-typescript": "^11.1.6"
+    "@rollup/plugin-typescript": "^11.1.6",
+    "minify": "^11.4.0"
   }
 }

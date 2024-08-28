@@ -21,7 +21,6 @@ const CommandArgValues = function() {
             }
             data.params[name] = value ?? true;
         }
-        Logger.json(data);
     };
 
     this.option = function(name, defaultValue) {
@@ -40,6 +39,10 @@ const CommandArgValues = function() {
 
     this.values = function() {
         return $data;
+    };
+
+    this.paramAt = function(index) {
+        return $data[index] ?? null;
     };
 
 };

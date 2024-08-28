@@ -1,4 +1,6 @@
-demo/
+
 .idea
 .vscode
+
+demo/
 node_modules

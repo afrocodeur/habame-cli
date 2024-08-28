@@ -1,0 +1,29 @@
+
+export default {
+    name: '%ProjectName%',
+    entry: {
+        html: 'public/index.html',
+        script: 'src/main.js',
+        modules: 'src/main.module.js'
+    },
+    server: {
+        port: 8000,
+        wsPort: 8001
+    },
+    plugins: {
+        view: [],
+        script: [],
+        style: []
+    },
+    build: {
+        outputs: {
+            dir: 'dist/',
+            files: {
+                css: '',
+                js: ''
+            }
+        },
+        type: '',
+        rollup: {}
+    }
+};

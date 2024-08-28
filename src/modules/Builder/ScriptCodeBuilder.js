@@ -8,6 +8,8 @@ import SourceFileBuilder from "./SourceFileBuilder.js";
 import {END_SCRIPT_BLOCK} from "../../constants/Builder.js";
 import RollupBuilder from "./RollupBuilder.js";
 
+import terser from '@rollup/plugin-terser';
+
 /**
  *
  * @param {ProjectConfig} $config
@@ -88,13 +90,28 @@ const ScriptCodeBuilder = function($config) {
         }
     };
 
-    this.getDependenciesScript = async function() {
+    this.getDependenciesScript = async function(options) {
         const dependenciesFile = $config.getDependenciesFilename();
         if(!dependenciesFile) {
             return '';
         }
 
-        return (await $rollupBuilder.build(dependenciesFile)).code;
+        let configOptions = $config.getBuildConfig().getRollupConfig();
+        configOptions.plugins = configOptions.plugins || [];
+        if(options) {
+            configOptions = { ...configOptions, ...options };
+            if(options.terser) {
+                configOptions.plugins.push(terser());
+            }
+        } else {
+            configOptions.plugins.push(terser());
+        }
+
+        let jsImportedCode = (await $rollupBuilder.build(dependenciesFile, configOptions)).code;
+        if(!options) {
+            return jsImportedCode;
+        }
+        return jsImportedCode +`;for(var a in ${options.name}){window[a]=${options.name}[a];}`;
     }
 
     this.getScript = async function(importedCode = true) {
@@ -106,7 +123,9 @@ const ScriptCodeBuilder = function($config) {
         const scripts = await Promise.all(scriptPromises);
         if(importedCode) {
             const outputCode = await this.getDependenciesScript();
-            scripts.unshift(outputCode);
+            if(outputCode) {
+                scripts.unshift(outputCode);
+            }
         }
 
         const entryMainScript = Fs.readFileSync(Path.resolve($config.getEntryMain()));
@@ -125,6 +144,11 @@ const ScriptCodeBuilder = function($config) {
             })());
         }
         return await Promise.all(stylePromises);
+    };
+
+    this.getStyle = async function() {
+        const cssCodes = await this.getStyles();
+        return cssCodes.map((source) => source.code).join('');
     };
 
 };

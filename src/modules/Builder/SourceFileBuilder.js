@@ -22,11 +22,11 @@ const SourceFileBuilder = function($filename, $config) {
     const executePlugins = async function(type, sourceCode) {
         const plugins = $config.getPlugins(type);
         for await (const plugin of plugins) {
-            if(typeof plugin === 'function' && plugin.constructor.name === 'AsyncFunction') {
-                sourceCode = await plugin(sourceCode);
+            if(typeof plugin.callback === 'function' && plugin.callback.constructor.name === 'AsyncFunction') {
+                sourceCode = await plugin.callback(sourceCode, plugin.options || {});
                 continue;
             }
-            sourceCode = plugin(sourceCode);
+            sourceCode = plugin.callback(sourceCode, plugin.options || {});
         }
         return sourceCode;
     };

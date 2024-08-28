@@ -10,7 +10,7 @@ const GENERATORS = {
 };
 
 
-const GenerateCommand = function($argv) {
+const Generate = function($argv) {
 
     this.exec = function() {
         const values = $argv.values();
@@ -27,8 +27,8 @@ const GenerateCommand = function($argv) {
 
 };
 
-GenerateCommand.signature = '';
-GenerateCommand.description = '';
-GenerateCommand.help = '';
+Generate.signature = '';
+Generate.description = '';
+Generate.help = '';
 
-export default GenerateCommand;
+export default Generate;
