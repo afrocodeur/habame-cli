@@ -27,4 +27,8 @@ const GenerateCommand = function($argv) {
 
 };
 
+GenerateCommand.signature = '';
+GenerateCommand.description = '';
+GenerateCommand.help = '';
+
 export default GenerateCommand;

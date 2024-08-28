@@ -10,7 +10,7 @@ import WsServer from "../../modules/Servers/WsServer/WsServer.js";
  * @param {CommandArgValues} argv
  * @constructor
  */
-const StartCommand = function(argv) {
+const StartCommand = function($argv) {
 
     const $projectConfig = new ProjectConfig();
     const $projectBuilder = new HabameProjectLiveBuilder($projectConfig);
@@ -19,11 +19,11 @@ const StartCommand = function(argv) {
 
     this.exec = async () => {
 
-        if(argv.option('hostpot')) {
+        if($argv.option('hostpot')) {
             Logger.error('Hostpot is Activated');
         }
 
-        const configFile = process.cwd()+'/hb.config.js';
+        const configFile = 'hb.config.js';
         if(!$projectConfig.exists(configFile)) {
             Logger.info(configFile);
             Logger.error('project configuration not found');
@@ -38,5 +38,9 @@ const StartCommand = function(argv) {
     };
 
 };
+
+StartCommand.signature = '';
+StartCommand.description = '';
+StartCommand.help = '';
 
 export default StartCommand;
