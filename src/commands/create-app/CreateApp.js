@@ -18,16 +18,21 @@ const CreateApp = function($args) {
             Logger.error(`Project ${$projectName} already exists`);
             process.exit();
         }
-        console.log('Create your first application ', $args.paramAt(0));
+        Logger.note('Create first application ' + $args.paramAt(0));
         const template = $args.option('template') ?? 'default';
 
         if(!Template.cloneTemplateFolder(template, $projectName)) {
-            Logger.error(`Echec de la création d un project ${projectName} sous le template ${templateName}`);
+            Logger.error(`Echec de la création du project ${$projectName}`);
             return;
         }
 
-        const { stderr } = await CommandExecutor.exec('yarn -v');
-        const installCommand = (!stderr) ? 'yarn' : 'npm';
+        let installCommand = 'npm';
+        try {
+            const { stderr } = await CommandExecutor.exec('yarn -v');
+            if(!stderr) {
+                installCommand = 'yarn';
+            }
+        } catch (e) {}
 
         Logger.info(`${installCommand} will use to install project`);
 
@@ -40,15 +45,15 @@ const CreateApp = function($args) {
             if(code !== 0) {
                 return;
             }
-            console.log(`Run cd ${$projectName} && hb start`);
+            Logger.note([`Run cd ${$projectName}`, 'hb start']);
         });
 
     };
 
 };
 
-CreateApp.signature = '';
-CreateApp.description = '';
+CreateApp.signature = 'ng create {ProjectName}';
+CreateApp.description = 'Creates a new Habame workspace.';
 CreateApp.help = '';
 
 export default CreateApp;

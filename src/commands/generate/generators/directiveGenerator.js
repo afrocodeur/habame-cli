@@ -1,26 +1,30 @@
 import Path from 'node:path';
 import Fs from 'node:fs';
 import Logger from "../../../modules/Logger/Logger.js";
+import Template from "../../../helpers/Template.js";
 import addToExistingModule from "./helper.js";
 
 const generateJsFile = function(filePath, name) {
-    const exportCode = [
-        '\tname: "'+ name +'"',
-        '\tdirective: '+ name,
-        '\toptions: {}',
-    ].join(',\n');
-
-    Fs.writeFileSync(filePath, `const ${name} = function({ element, attribute, attrs }) {\n\tthis.created = function() {\n\t};\n};\nexport default {\n${exportCode}\n}`, { flag: 'a+' });
-    Logger.success(`----> ${name}.directive.hb.js`);
+    Template.cloneFile('files/directive.js.template', filePath, {
+        directiveName: name
+    });
+    Logger.success(`Create ${name}.directive.hb.js file`);
 };
 
 
 const updateExistingModule = function(elementToAddPath, fileContent) {
 
     if(!(new RegExp(elementToAddPath)).test(fileContent)) {
-        return fileContent.replace(
-            /\bdirectives\b[\s]*:[\s]*\[/,
-            "directives: [\n\t\t'"+ elementToAddPath +"',\n\t\t",
+        const regex = /\bdirectives\b[\s]*:[\s]*\[/;
+        if(!regex.test(fileContent)) {
+            return fileContent.replace(
+                /\bexport[\s]+default[\s]+\{/,
+                "export default {\n\tdirectives: [\n\t\t'"+ elementToAddPath +"',\n\t],",
+                fileContent
+            );
+        }
+        return fileContent.replace(regex,
+            "directives: [\n\t\t'"+ elementToAddPath +"',",
             fileContent
         );
     }
@@ -30,9 +34,6 @@ const updateExistingModule = function(elementToAddPath, fileContent) {
 
 
 const DirectiveGenerator = function($name, $argv) {
-
-    console.log(`Generate ${$name} directive source`);
-    console.log(`----> Directive ${$name}.directive.hb.js`);
     const directiveDir = Path.resolve(Path.dirname($name));
 
     const filename = Path.basename($name);
@@ -40,7 +41,6 @@ const DirectiveGenerator = function($name, $argv) {
 
     generateJsFile(filePathAndBasename + '.directive.hb.js', filename);
     addToExistingModule(directiveDir, filename+ '.directive.hb.js', updateExistingModule);
-
 };
 
 export default DirectiveGenerator;

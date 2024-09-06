@@ -45,7 +45,7 @@ const FileSystem = {
     },
     removeDir: function(path) {
         if(Fs.existsSync(path)) {
-            Fs.rmdirSync(path, { recursive: true });
+            Fs.rmSync(path, { recursive: true, force: true });
         }
     }
 };

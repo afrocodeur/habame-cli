@@ -1,4 +1,5 @@
 import Fs from 'node:fs';
+import Path from 'node:path';
 import { minify } from "terser"
 import { minify as Minify } from 'minify';
 
@@ -23,7 +24,7 @@ function Build($args) {
 
     this.exec = async function() {
         $isProdBuild = $args.option('prod');
-        console.log('Build your project '+ ($isProdBuild ? 'as prod' : 'as dev'));
+        Logger.note('Build your project '+ ($isProdBuild ? 'as prod' : 'as dev'));
 
         if(!$projectConfig.exists(PROJECT_CONFIG_FILE_NAME)) {
             Logger.info(PROJECT_CONFIG_FILE_NAME);
@@ -34,7 +35,7 @@ function Build($args) {
 
         $buildConfig = $projectConfig.getBuildConfig();
 
-        Logger.log('INFO : create directory ' + $buildConfig.getDestinationPath());
+        Logger.note('Create directory ' + $buildConfig.getDestinationPath());
         if(!Fs.existsSync($buildConfig.getDestinationPath())) {
             Fs.mkdirSync($buildConfig.getDestinationPath());
         }
@@ -47,6 +48,7 @@ function Build($args) {
         await this.buildIndexHtml();
 
         await this.copyAssets();
+        Logger.success('Build completed');
     };
 
     this.buildCssCode = async function() {
@@ -57,7 +59,7 @@ function Build($args) {
         const styleCodeMinified = await Minify.css(styleCode);
 
         FileSystem.putContent(cssFilepath, styleCodeMinified);
-        Logger.log('INFO : create ' + cssFileName);
+        Logger.note('Create ' + cssFileName);
     };
 
     this.buildJsCode = async function() {
@@ -72,9 +74,26 @@ function Build($args) {
         const jsAppCode = await $scriptBuilder.getScript(false);
         const jsCodeMinified = await minify(jsAppCode, { sourceMap: true });
 
-        FileSystem.putContent(jsFilepath, `!function(){${jsCodeDependencies + jsCodeMinified.code}}();`);
+        let output = jsCodeMinified.code;
+
+        if(!$args.option('module')) {
+            output = jsCodeDependencies + output;
+        }
+
+        FileSystem.putContent(jsFilepath, `!function(){${output}}();`);
         FileSystem.putContent(jsFilepath + '.map', jsCodeMinified.map);
-        Logger.log('INFO : create ' + jsFileName);
+        Logger.note('Create ' + jsFileName);
+
+        if(!$args.option('module')) {
+            return;
+        }
+        const importPath = ($buildConfig.getUnresolvedDestinationPath() +'/'+ $buildConfig.getJsFileName())
+            .replace(/\/+/, '/');
+        const mainFileName = 'index.js';
+        FileSystem.putContent(
+            FileSystem.pathFromCwd(mainFileName),
+            `import "${importPath}"`);
+        Logger.success(`${mainFileName} file created`);
     };
 
     this.buildIndexHtml = async function() {
@@ -97,7 +116,7 @@ function Build($args) {
         const htmlContentMinified  = await Minify.html(htmlContent);
 
         FileSystem.putContent(htmlFilepath, htmlContentMinified);
-        Logger.log('INFO : create ' + HTML_FILENAME);
+        Logger.note('Create ' + HTML_FILENAME);
     };
 
     this.copyAssets = async function() {
@@ -113,8 +132,8 @@ function Build($args) {
 
 }
 
-Build.signature = '';
-Build.description = '';
+Build.signature = 'ng build {--module}';
+Build.description = 'Compiles an Habame application or library into an output directory named dist/ at the given outputs dir.';
 Build.help = '';
 
 export default Build;

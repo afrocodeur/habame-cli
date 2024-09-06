@@ -1,0 +1,11 @@
+const %directiveName% = function({ element, attribute, attrs }) {
+    this.created = function() {
+        console.log({ element, attribute, attrs });
+    };
+};
+
+export default {
+    name: '%directiveName%',
+    directive: %directiveName%,
+    options: {},
+}

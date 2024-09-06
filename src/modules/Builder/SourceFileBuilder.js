@@ -4,6 +4,7 @@ import Fs from 'node:fs';
 import CustomRequire from "../../helpers/CustomRequire.js";
 import FileSystem from "../../helpers/FileSystem.js";
 import {FILE_SOURCE_SCRIPT_TYPE, FILE_SOURCE_STYLE_TYPE, FILE_SOURCE_VIEW_TYPE} from "../../constants/Builder.js";
+import Logger from "../Logger/Logger.js";
 
 /**
  *
@@ -17,6 +18,12 @@ const SourceFileBuilder = function($filename, $config) {
 
     let $description = {};
     let $isOnUpdate = false;
+    let $buildCodes = {
+        component: null,
+        function: null,
+        style: null,
+        view: null
+    };
     const $files = { templateUrl: null, styleUrl: null };
 
     const executePlugins = async function(type, sourceCode) {
@@ -40,12 +47,15 @@ const SourceFileBuilder = function($filename, $config) {
             return;
         }
         const updatedData = { ...data };
+        Logger.note(`${data.name} ${data.type} File edited`);
         try {
             $isOnUpdate = true;
+            $buildCodes.component = null;
             if(data.type === FILE_SOURCE_SCRIPT_TYPE) {
                 const currentDescription = { ...$description };
 
                 await this.load();
+                $buildCodes.function = null;
                 updatedData.code = await this.getFunction();
                 if(updatedData.isComponent) {
                     const isSameTemplateValue = currentDescription.templateUrl === $description.templateUrl
@@ -60,9 +70,11 @@ const SourceFileBuilder = function($filename, $config) {
                 }
             }
             else if(data.type === FILE_SOURCE_VIEW_TYPE) {
+                $buildCodes.view = null;
                 updatedData.code = await this.getJsonView();
             }
             else if(data.type === FILE_SOURCE_STYLE_TYPE) {
+                $buildCodes.style = null;
                 updatedData.code = await this.getStyle();
             }
         } catch (e) {
@@ -103,27 +115,37 @@ const SourceFileBuilder = function($filename, $config) {
     };
 
     this.build = async function() {
-
-    };
-
-    this.getHbScript = async function() {
+        $buildCodes.component = null;
         const theFunction = await this.getFunction();
         const jsonViewEncoded = await this.getJsonViewEncoded();
         if($description.directive) {
             const options = typeof $description.options === 'object' ? $description.options : {};
-            return `Habame.createDirective("${$description.name}", ${theFunction}, ${JSON.stringify(options)})`;
+            $buildCodes.component = `Habame.createDirective("${$description.name}", ${theFunction}, ${JSON.stringify(options)})`;
         }
-        if($description.service) {
-            return `Habame.createService("${$description.name}", ${theFunction})`;
+        else if($description.service) {
+            $buildCodes.component = `Habame.createService("${$description.name}", ${theFunction})`;
         }
+        else {
+            $buildCodes.component = `Habame.createComponent("${$description.name}", ${theFunction}, ${jsonViewEncoded})`;
+        }
+        return $buildCodes.component;
+    };
 
-        return `Habame.createComponent("${$description.name}", ${theFunction}, ${jsonViewEncoded})`;
+    this.getHbScript = async function() {
+        if($buildCodes.component) {
+            return $buildCodes.component;
+        }
+        return this.build();
     };
 
     this.getFunction = async function() {
+        if($buildCodes.function) {
+            return $buildCodes.function;
+        }
         const functionSourceCode = ($description.controller || $description.directive || $description.service).toString();
         // handle the source code
-        return await executePlugins('script', functionSourceCode);
+        $buildCodes.function = await executePlugins('script', functionSourceCode);
+        return $buildCodes.function;
     };
 
     this.getNativeView = function() {
@@ -139,12 +161,16 @@ const SourceFileBuilder = function($filename, $config) {
     };
 
     this.getJsonView = async function() {
+        if($buildCodes.view) {
+            return $buildCodes.view;
+        }
         let view = this.getNativeView();
         if($files.templateUrl && FileSystem.isJsonFile($files.templateUrl)) {
             return view;
         }
         view = await executePlugins('view', view);
         if(typeof view === 'object') {
+            $buildCodes.view = view;
             return view;
         }
         return {};
@@ -156,7 +182,11 @@ const SourceFileBuilder = function($filename, $config) {
     };
 
     this.getStyle = async function() {
-        return await executePlugins('style', this.getNativeStyle());
+        if($buildCodes.style) {
+            return $buildCodes.style;
+        }
+        $buildCodes.style = await executePlugins('style', this.getNativeStyle());
+        return $buildCodes.style;
     };
 
     this.getComponentName = function() {

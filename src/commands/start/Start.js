@@ -26,21 +26,19 @@ const Start = function($argv) {
 
         if(!$projectConfig.exists(PROJECT_CONFIG_FILE_NAME)) {
             Logger.info(PROJECT_CONFIG_FILE_NAME);
-            Logger.error('project configuration not found');
+            Logger.error('project configuration file not found');
             return;
         }
         await $projectConfig.setConfigFile(PROJECT_CONFIG_FILE_NAME);
 
         $wsServer.serve();
         await $httpServer.serve();
-
-        console.log('start the websocket server');
     };
 
 };
 
-Start.signature = '';
-Start.description = '';
+Start.signature = 'ng start';
+Start.description = 'Builds and serves your application, rebuilding on file changes';
 Start.help = '';
 
 export default Start;

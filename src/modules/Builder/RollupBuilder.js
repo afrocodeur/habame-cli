@@ -29,7 +29,6 @@ const RollupBuilder = function() {
         let buildFailed = false;
         let outputResponse = [];
         inputOptions.input = entryFile;
-        console.log('use rollup on '+ entryFile);
         try {
             // create a bundle
             bundle = await rollup(inputOptions);

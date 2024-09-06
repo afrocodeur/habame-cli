@@ -1,7 +1,6 @@
 import Fs from 'node:fs';
 import Logger from "../modules/Logger/Logger.js";
 import FileSystem from "./FileSystem.js";
-import fileSystem from "./FileSystem.js";
 
 
 const Template = {
@@ -28,15 +27,25 @@ const Template = {
                 Logger.log(`CREATE : ${relativeFilePath}`);
             });
 
-            Fs.renameSync(tempDestinationPath, FileSystem.pathFromCwd(projectName));
+            Fs.cpSync(tempDestinationPath, destinationPath, { recursive: true }, function() {
+                isSuccess = false;
+            });
+            FileSystem.removeDir(tempDestinationPath);
         } catch (e) {
             isSuccess = false;
             if(Fs.existsSync(tempDestinationPath)) {
                 FileSystem.removeDir(tempDestinationPath);
             }
+            console.log(e);
         }
 
         return isSuccess;
+    },
+
+    cloneFile: function(sourceFile, destinationName, data) {
+        const sourceFilePath = FileSystem.pathFromRoot('templates/'+ sourceFile);
+        Fs.cpSync(sourceFilePath, destinationName);
+        Template.updateContent(destinationName, data);
     },
 
     updateContent: function(filePath, data) {

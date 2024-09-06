@@ -1,0 +1,14 @@
+
+const %serviceName% = function(State) {
+
+    State.init({
+
+    });
+
+};
+
+export default {
+    name: '%serviceName%',
+    service: %serviceName%,
+    options: { isUniqueInstance: true }
+}

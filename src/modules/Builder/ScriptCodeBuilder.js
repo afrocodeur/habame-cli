@@ -22,6 +22,8 @@ const ScriptCodeBuilder = function($config) {
     const $moduleLoader = new ModuleLoader(this);
     const $rollupBuilder = new RollupBuilder();
 
+    let $dependenciesCode = null;
+
     AbstractEvent.apply(this);
 
     this.addSourceFile = async (filename) => {
@@ -43,7 +45,6 @@ const ScriptCodeBuilder = function($config) {
     };
 
     this.watch = async () => {
-        Logger.log('lets watch this project: '+ Path.resolve(''));
         // Load the main modules
         Fs.watch(Path.resolve(''), { recursive: true }, async (event, filename) => {
             const absolutePathName = Path.resolve(filename.trim());
@@ -81,7 +82,8 @@ const ScriptCodeBuilder = function($config) {
     this.watchDependenciesFile = function() {
         const dependenciesFile = $config.getDependenciesFilename();
         if(dependenciesFile) {
-            Fs.watch(dependenciesFile, () => {
+            Fs.watch(dependenciesFile, async () => {
+                await this.buildDependenciesScript(ScriptCodeBuilder.DEPENDENCES_DEFAULT_OPTION);
                 this.emit(ScriptCodeBuilder.UPDATED, {
                     reload: true,
                     type: 'dependencies'
@@ -90,11 +92,14 @@ const ScriptCodeBuilder = function($config) {
         }
     };
 
-    this.getDependenciesScript = async function(options) {
+    this.buildDependenciesScript = async function(options) {
+        $dependenciesCode = null;
         const dependenciesFile = $config.getDependenciesFilename();
         if(!dependenciesFile) {
             return '';
         }
+
+        Logger.info('Compile dependencies');
 
         let configOptions = $config.getBuildConfig().getRollupConfig();
         configOptions.plugins = configOptions.plugins || [];
@@ -111,7 +116,16 @@ const ScriptCodeBuilder = function($config) {
         if(!options) {
             return jsImportedCode;
         }
-        return jsImportedCode +`;for(var a in ${options.name}){window[a]=${options.name}[a];}`;
+        $dependenciesCode = jsImportedCode +`;for(var a in ${options.name}){window[a]=${options.name}[a];}`;
+        Logger.info('Compile dependencies completed');
+        return $dependenciesCode;
+    };
+
+    this.getDependenciesScript = async function(options) {
+        if($dependenciesCode) {
+            return $dependenciesCode;
+        }
+        return this.buildDependenciesScript(options);
     }
 
     this.getScript = async function(importedCode = true) {
@@ -154,5 +168,6 @@ const ScriptCodeBuilder = function($config) {
 };
 
 ScriptCodeBuilder.UPDATED = 'updated';
+ScriptCodeBuilder.DEPENDENCES_DEFAULT_OPTION = { format: 'iife', name: 'dependenciesLiveImported' };
 
 export default ScriptCodeBuilder;

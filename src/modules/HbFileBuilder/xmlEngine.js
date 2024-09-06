@@ -1,4 +1,4 @@
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 import {
     DEFAULT_SLOT_NAME,
     FRAGMENT_ACCEPTED_NAMES,

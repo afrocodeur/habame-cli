@@ -1,0 +1,14 @@
+function %componentName%({ State }) {
+
+    State.init({
+
+    });
+
+}
+
+export default {
+    name: '%componentName%',
+    controller: %componentName%,
+    templateUrl: '%templateName%',
+    styleUrl: '%styleName%'
+};

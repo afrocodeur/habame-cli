@@ -1,7 +1,6 @@
 import CommandArgValues from "./CommandArgValues.js";
-import { COMMANDS } from "./CommandList.js";
-
-
+import { CommandList } from "./CommandList.js";
+import Logger, { LoggerTitle } from "../modules/Logger/Logger.js";
 
 
 const CommandHandler = function() {
@@ -15,7 +14,7 @@ const CommandHandler = function() {
         }
 
         const commandName = args.shift();
-        const Command = COMMANDS[commandName];
+        const Command = CommandList[commandName];
         if(!Command) {
             this.commandNotFound(commandName);
             return;
@@ -24,15 +23,32 @@ const CommandHandler = function() {
         commandArgValues.load(args);
 
         const command = new Command(commandArgValues);
+        if(commandArgValues.option('help')) {
+            return this.showCommandHelp(Command);
+        }
+
         command.exec();
     };
 
     this.commandNotFound = function(name) {
-        console.log('Command ' +name+ ' not found');
+        Logger.error('Command ' +name+ ' not found');
+    };
+
+    this.showCommandHelp = (command) => {
+        Logger.info(command.signature);
+        Logger.log(command.description);
     };
 
     this.showHelp = () => {
-        console.log('Show help ^^');
+        Logger.title('Habame CLI V0.0.1', LoggerTitle.BIG);
+
+        Logger.info('commands');
+
+        for (const name in CommandList) {
+            const command = CommandList[name];
+
+            console.log(name.padEnd(30) + command.description);
+        }
     };
 
 };

@@ -20,23 +20,29 @@ const ProjectConfig =  function() {
         if($configFile) {
             return;
         }
-        Logger.info('Chargement de la configuration du projet ');
         $configFile = FileSystem.pathFromCwd(configFile);
 
         if(watch) {
             Fs.watchFile(configFile, async () => {
-                return this.load();
+                return this.load(watch);
             });
         }
-        return this.load();
+        return this.load(watch);
     };
 
     this.getBuildConfig = function() {
         return new BuildConfig($data.build ||  {});
     };
 
-    this.load = async () => {
+    this.load = async (watch) => {
         $data = await CustomRequire.get($configFile);
+        Logger.info('Project config loaded');
+        if(watch && this.getExperimentalHotReload()) {
+            Logger.warning([
+                'Experimental hot reload is active.',
+                'Note that you could notice some troubleshooting on the page refreshing process.'
+            ])
+        }
     };
 
     this.getDependenciesFilename = () => {
@@ -69,6 +75,13 @@ const ProjectConfig =  function() {
 
     this.getWsServerPort = () => {
         return $data.server?.wsPort || DefaultProjectConfig.server.wsPort;
+    };
+
+    this.getExperimentalHotReload = function() {
+        if($data.server?.experimentalHotReload !== undefined) {
+            return $data.server?.experimentalHotReload;
+        }
+        return DefaultProjectConfig.server.experimentalHotReload;
     };
 
     this.getServerPort = () => {

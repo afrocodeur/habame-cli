@@ -68,13 +68,13 @@ const ModuleLoader = function($scriptBuilder) {
         modules.forEach((filename) => {
             const moduleFilePath = Path.resolve(dirname, filename);
             if(!Fs.existsSync(moduleFilePath)) {
-                Logger.error('load submodule not found ' + filename);
+                Logger.error('Submodule not found ' + filename);
                 return;
             }
             if($caches.modules[moduleFilePath]) {
                 return;
             }
-            console.log('Load submodule '+filename, $caches.modules);
+            Logger.note(`Submodule ${filename} loaded`);
             const module = new ModuleLoader($scriptBuilder);
             loadModulesPromises.push(module.load(moduleFilePath, watch));
             $caches.modules[moduleFilePath] = {

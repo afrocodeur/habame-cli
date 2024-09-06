@@ -25,7 +25,7 @@ const HabameProjectLiveBuilder = function($config) {
     this.getHtmlCode = async ($config) => {
         const entryHtml = Path.resolve($config.getEntryHtml());
         let contentHtml = Fs.readFileSync(entryHtml, 'utf8');
-        const dependencies = await $scriptBuilder.getDependenciesScript({ format: 'iife', name: 'dependenciesLiveImported' });
+        const dependencies = await $scriptBuilder.getDependenciesScript(ScriptCodeBuilder.DEPENDENCES_DEFAULT_OPTION);
         const appScript = await $scriptBuilder.getScript(false);
         const appStyles = await $scriptBuilder.getStyles();
 

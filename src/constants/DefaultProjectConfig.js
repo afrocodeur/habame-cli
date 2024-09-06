@@ -10,7 +10,8 @@ export default {
     },
     server: {
         port: 8000,
-        wsPort: 8001
+        wsPort: 8001,
+        experimentalHotReload: false
     },
     plugins: {
         'view': [{callback: xmlEngine}],

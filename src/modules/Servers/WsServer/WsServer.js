@@ -14,25 +14,47 @@ import FileSystem from "../../../helpers/FileSystem.js";
 const WsServer =  function($config, $builder) {
 
     let $wsServer = null;
+    const $sessionId = (new Date()).getTime();
     const $scriptBuilder = $builder.scriptBuilder();
 
     this.serve = () => {
         if(!$wsServer) {
             $wsServer = new WebSocketServer({ port: $config.getWsServerPort() }, () => {
-                Logger.info('Websocket server run on '+ $config.getWsServerPort());
+                Logger.success('Websocket server run on '+ $config.getWsServerPort());
             });
         }
         $builder.setWsClientCode(this.getClientCode());
         $wsServer.on('connection', function connection(ws) {
-            ws.on('message', function message(data) {
-                Logger.log('received: %s', data);
+            Logger.info('Connection established');
+
+            ws.on('message', function message(message) {
+                try {
+                    const data = JSON.parse(message);
+
+                }catch (e) {}
             });
             $scriptBuilder.on(ScriptCodeBuilder.UPDATED, (data) => {
                 try {
+                    data.experimentalHotReload = $config.getExperimentalHotReload();
+                    data.sessionId = $sessionId;
                     ws.send(JSON.stringify( data ));
                 } catch (e) {}
             });
-            ws.send(JSON.stringify({ message: 'welcome!' }));
+            ws.send(JSON.stringify({ message: 'welcome!', sessionId: $sessionId }));
+            ws.on('close', () => {
+                Logger.warning('Connection closed');
+            })
+        });
+
+        $wsServer.once('error', function(err) {
+            if (err.code === 'EADDRINUSE') {
+                Logger.error(`Port ${$config.getWsServerPort()} is currently in use`);
+                process.exit()
+            }
+        });
+
+        process.on('exit', function (){
+            $wsServer.close();
         });
     };
 

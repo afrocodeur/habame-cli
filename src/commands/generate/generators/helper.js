@@ -10,9 +10,10 @@ export const addToExistingModule = function(dirname, filename, callback) {
 
     do {
         const dirBasename = Path.basename(currentDir);
-        potentialModule = Path.resolve(currentDir, dirBasename.toLowerCase()+ '.module.js');
+        const potentialModuleName = (dirBasename === 'src' ? 'main.module.js' : dirBasename.toLowerCase()+ '.module.js');
+        potentialModule = Path.resolve(currentDir, potentialModuleName);
 
-        if(Fs.existsSync(potentialModule)) {
+        if(Fs.existsSync(potentialModule) && (filename !== potentialModuleName)) {
             break;
         }
         lastDir = currentDir;
@@ -25,6 +26,10 @@ export const addToExistingModule = function(dirname, filename, callback) {
     } while (currentDir && deep > 0);
 
     if(!potentialModule) {
+        Logger.alert([
+            'No module found to update',
+            'Please add manually your component to the module file'
+        ]);
         return;
     }
 
