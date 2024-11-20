@@ -23,7 +23,7 @@ const xmlEngine = function(template) {
     childrenNodes.each((index, child) => {
         children.push(xmlNodeToJson(child))
     });
-    return children.length === 1 ? children[0] : children;
+    return children;
 };
 
 

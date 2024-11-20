@@ -1,3 +1,4 @@
+import { habameSass } from 'habame-sass';
 
 export default {
     name: '%ProjectName%',
@@ -14,7 +15,12 @@ export default {
     plugins: {
         view: [],
         script: [],
-        style: []
+        style: [
+            {
+                callback: habameSass,
+                options: { includes: ['vars.hb.scss'] }
+            }
+        ]
     },
     build: {
         outputs: {

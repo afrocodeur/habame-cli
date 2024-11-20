@@ -31,6 +31,7 @@ const RollupBuilder = function() {
         inputOptions.input = entryFile;
         try {
             // create a bundle
+            Logger.note('Build '+ entryFile);
             bundle = await rollup(inputOptions);
 
             const outputOption = outputConfigs ? { ...devOutputConfigs, ...outputConfigs } : { ...devOutputConfigs };

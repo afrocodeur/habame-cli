@@ -38,14 +38,19 @@ const CreateApp = function($args) {
 
         const installChild = await CommandExecutor.spawn(installCommand, ['install'], {
             cwd: FileSystem.pathFromCwd($projectName),
-            stdio: 'inherit'
+            stdio: 'inherit',
+            shell: process.platform === 'win32'
         });
 
         installChild.on('exit', function(code) {
             if(code !== 0) {
                 return;
             }
-            Logger.note([`Run cd ${$projectName}`, 'hb start']);
+            Logger.note([
+                'Run the following commands',
+                `cd ${$projectName}`,
+                'hb start'
+            ]);
         });
 
     };

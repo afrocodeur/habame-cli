@@ -7,5 +7,6 @@ export const CommandList = {
     start: Start,
     generate: Generate,
     create: CreateApp,
-    build: Build
+    build: Build,
+    salto: Build,
 };

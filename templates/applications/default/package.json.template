@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "habame": "^1.0.1"
+    "habame": "^1.0.23",
+    "habame-sass": "^0.0.2"
   }
 }

@@ -63,7 +63,7 @@ function Build($args) {
     };
 
     this.buildJsCode = async function() {
-        const jsFileName = $buildConfig.getJsFileName();
+        const jsFileName = ($args.option('module') ? 'module.' : '') + $buildConfig.getJsFileName();
         const jsFilepath = FileSystem.resolve($buildConfig.getDestinationPath(), jsFileName);
 
         const jsCodeDependencies = await $scriptBuilder.getDependenciesScript({
@@ -87,7 +87,7 @@ function Build($args) {
         if(!$args.option('module')) {
             return;
         }
-        const importPath = ($buildConfig.getUnresolvedDestinationPath() +'/'+ $buildConfig.getJsFileName())
+        const importPath = ($buildConfig.getUnresolvedDestinationPath() +'/'+ jsFileName)
             .replace(/\/+/, '/');
         const mainFileName = 'index.js';
         FileSystem.putContent(

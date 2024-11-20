@@ -6,10 +6,10 @@ function BuildConfig(config) {
     const $timestamp = (new Date()).getTime() / 1000;
 
     this.getUnresolvedDestinationPath = function() {
-        return config.dir ?? DefaultProjectConfig.build.outputs.dir;
+        return config.outputs?.dir ?? DefaultProjectConfig.build.outputs.dir;
     };
     this.getDestinationPath = function() {
-        const dir = config.dir ?? DefaultProjectConfig.build.outputs.dir;
+        const dir = config.outputs?.dir ?? DefaultProjectConfig.build.outputs.dir;
         return FileSystem.pathFromCwd(dir);
     };
 

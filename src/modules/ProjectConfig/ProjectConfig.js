@@ -46,7 +46,15 @@ const ProjectConfig =  function() {
     };
 
     this.getDependenciesFilename = () => {
-        const filename = Path.resolve(process.cwd(), 'dependencies.hb.js');
+        const filename = Path.resolve(process.cwd(), 'dependencies.js');
+        if(Fs.existsSync(filename)) {
+            return filename;
+        }
+        return null;
+    };
+
+    this.getGlobalsFunctionsFilename = () => {
+        const filename = Path.resolve(process.cwd(), 'globals.js');
         if(Fs.existsSync(filename)) {
             return filename;
         }

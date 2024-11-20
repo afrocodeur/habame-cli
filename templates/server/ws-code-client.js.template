@@ -32,6 +32,23 @@
                         reload();
                         return;
                     }
+                    if(query.type === 'globals') {
+                        const scriptNode = document.querySelector("script[data-type='globals']");
+                        scriptNode.remove();
+                        const newScriptNode = document.createElement('script');
+                        newScriptNode.setAttribute('data-type', 'globals');
+                        newScriptNode.setAttribute('type', 'text/javascript');
+                        newScriptNode.innerHTML = query.code;
+                        document.body.appendChild(newScriptNode)
+                        return;
+                    }
+                    const isComponentExists = Habame.isComponentFactoryExists(query.name);
+
+                    if(!isComponentExists) {
+                        console.log(query);
+                        return;
+                    }
+
                     const componentFactory = Habame.getComponentFactory(query.name);
                     if(!componentFactory) {
                         reload();

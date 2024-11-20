@@ -5,7 +5,7 @@ import AbstractEvent from "../../helpers/AbstractEvent.js";
 import Logger from "../Logger/Logger.js";
 import ModuleLoader from "./ModuleLoader.js";
 import SourceFileBuilder from "./SourceFileBuilder.js";
-import {END_SCRIPT_BLOCK} from "../../constants/Builder.js";
+import {END_SCRIPT_BLOCK, FILE_SOURCE_STYLE_TYPE} from "../../constants/Builder.js";
 import RollupBuilder from "./RollupBuilder.js";
 
 import terser from '@rollup/plugin-terser';
@@ -21,27 +21,70 @@ const ScriptCodeBuilder = function($config) {
     const $allSourceFiles = {};
     const $moduleLoader = new ModuleLoader(this);
     const $rollupBuilder = new RollupBuilder();
+    const App = {
+        Logger,
+        reload: () => {
+            this.emit(ScriptCodeBuilder.UPDATED, { reload: true });
+        },
+        reloadStyles: async () => {
+            const updates = [];
+            for(const filename in $allSourceFiles) {
+                const source = $allSourceFiles[filename];
+                if(source.data.type === FILE_SOURCE_STYLE_TYPE) {
+                    source.builder.removeCache(FILE_SOURCE_STYLE_TYPE);
+                    updates.push(this.updateFile(filename));
+                }
+            }
+            await Promise.all(updates);
+        }
+    };
 
     let $dependenciesCode = null;
+    let $globalFunctionsCode = null;
 
     AbstractEvent.apply(this);
+
+    const getConfigOptions = function(options) {
+        let configOptions = $config.getBuildConfig().getRollupConfig();
+        configOptions.plugins = configOptions.plugins || [];
+        if (options) {
+            configOptions = {...configOptions, ...options};
+            if (options.terser) {
+                configOptions.plugins.push(terser());
+            }
+        }
+        else {
+            configOptions.plugins.push(terser());
+        }
+
+        return configOptions;
+    }
 
     this.addSourceFile = async (filename) => {
         if($scriptSourceFiles[filename]) {
             return;
         }
-        const builder = new SourceFileBuilder(filename, $config);
+        const builder = new SourceFileBuilder(filename, $config, App);
         await builder.load();
         const files = builder.files();
 
         files.forEach(({ filename, data }) => {
-            $allSourceFiles[filename] = { builder, data };
+            $allSourceFiles[filename] = { builder, data, mtime: null };
         });
         $scriptSourceFiles[filename] = { builder };
     };
 
     this.removeSourceFiles = (filename) => {
         $scriptSourceFiles[filename] = null;
+    };
+
+    this.updateFile = async (filename) => {
+        const { builder, data } = $allSourceFiles[filename];
+        const updatedData = await builder.update(data);
+        if(!updatedData) {
+            return;
+        }
+        this.emit(ScriptCodeBuilder.UPDATED, updatedData);
     };
 
     this.watch = async () => {
@@ -51,16 +94,15 @@ const ScriptCodeBuilder = function($config) {
             if(event !== 'change' || !Fs.existsSync(absolutePathName) || (/~$/.test(absolutePathName))) {
                 return;
             }
-            const stat = Fs.statSync(absolutePathName);
+            const stat = Fs.statSync(filename);
             if(stat.isDirectory() || !$allSourceFiles[absolutePathName]) {
                 return;
             }
-            const { builder, data } = $allSourceFiles[absolutePathName];
-            const updatedData = await builder.update(data);
-            if(!updatedData) {
+            if($allSourceFiles[absolutePathName].mtime === stat.mtime) {
                 return;
             }
-            this.emit(ScriptCodeBuilder.UPDATED, updatedData);
+            $allSourceFiles[absolutePathName].mtime = stat.mtime;
+            return this.updateFile(absolutePathName);
         });
         await this.build(true);
     };
@@ -90,6 +132,35 @@ const ScriptCodeBuilder = function($config) {
                 });
             });
         }
+
+        const globalsFile = $config.getGlobalsFunctionsFilename();
+        if(globalsFile) {
+            Fs.watch(globalsFile, async () => {
+                const code = await this.buildGlobalsScript(ScriptCodeBuilder.GLOBALS_DEFAULT_OPTION, true);
+                this.emit(ScriptCodeBuilder.UPDATED, {
+                    name: 'globals',
+                    type: 'globals',
+                    code
+                });
+            });
+        }
+    };
+
+    this.buildGlobalsScript = async function(options, isDevMode) {
+        $globalFunctionsCode = '';
+        const globalsFile = $config.getGlobalsFunctionsFilename();
+        if(!globalsFile){
+            return $globalFunctionsCode;
+        }
+        Logger.info('Compile globals');
+        let configOptions = getConfigOptions(options);
+        const build = (await $rollupBuilder.build(globalsFile, configOptions));
+        $globalFunctionsCode = build.code;
+
+        // trick to get only functions
+        $globalFunctionsCode = $globalFunctionsCode.replace(`var ${configOptions.name}`, `${isDevMode ? 'var' : 'const'} {${build.exports.join(',')}}`);
+        Logger.info('Compile globals completed');
+        return $globalFunctionsCode;
     };
 
     this.buildDependenciesScript = async function(options) {
@@ -100,25 +171,19 @@ const ScriptCodeBuilder = function($config) {
         }
 
         Logger.info('Compile dependencies');
+        let configOptions = getConfigOptions(options);
 
-        let configOptions = $config.getBuildConfig().getRollupConfig();
-        configOptions.plugins = configOptions.plugins || [];
-        if(options) {
-            configOptions = { ...configOptions, ...options };
-            if(options.terser) {
-                configOptions.plugins.push(terser());
-            }
-        } else {
-            configOptions.plugins.push(terser());
-        }
+        const build = (await $rollupBuilder.build(dependenciesFile, configOptions));
+        let jsImportedCode = build.code;
 
-        let jsImportedCode = (await $rollupBuilder.build(dependenciesFile, configOptions)).code;
         if(!options) {
+            $dependenciesCode = jsImportedCode;
+            Logger.info('Compile dependencies completed');
             return jsImportedCode;
         }
-        $dependenciesCode = jsImportedCode +`;for(var a in ${options.name}){window[a]=${options.name}[a];}`;
+        jsImportedCode = jsImportedCode.replace(`var ${options.name}`, `var {${build.exports.join(',')}}`);
         Logger.info('Compile dependencies completed');
-        return $dependenciesCode;
+        return jsImportedCode;
     };
 
     this.getDependenciesScript = async function(options) {
@@ -126,6 +191,13 @@ const ScriptCodeBuilder = function($config) {
             return $dependenciesCode;
         }
         return this.buildDependenciesScript(options);
+    }
+
+    this.getGlobalFunctionsScript = async function(options, isDevMode = false) {
+        if($globalFunctionsCode) {
+            return $globalFunctionsCode;
+        }
+        return this.buildGlobalsScript(options, isDevMode);
     }
 
     this.getScript = async function(importedCode = true) {
@@ -136,6 +208,10 @@ const ScriptCodeBuilder = function($config) {
         }
         const scripts = await Promise.all(scriptPromises);
         if(importedCode) {
+            const globalsCode = await this.getGlobalFunctionsScript();
+            if(globalsCode) {
+                scripts.unshift(globalsCode);
+            }
             const outputCode = await this.getDependenciesScript();
             if(outputCode) {
                 scripts.unshift(outputCode);
@@ -168,6 +244,8 @@ const ScriptCodeBuilder = function($config) {
 };
 
 ScriptCodeBuilder.UPDATED = 'updated';
-ScriptCodeBuilder.DEPENDENCES_DEFAULT_OPTION = { format: 'iife', name: 'dependenciesLiveImported' };
+// DLI Dependencies Live Import
+ScriptCodeBuilder.DEPENDENCES_DEFAULT_OPTION = { format: 'iife', name: '__DLI__' };
+ScriptCodeBuilder.GLOBALS_DEFAULT_OPTION = { format: 'iife', name: '__GDI__' };
 
 export default ScriptCodeBuilder;

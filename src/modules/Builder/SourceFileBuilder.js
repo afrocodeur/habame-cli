@@ -10,9 +10,10 @@ import Logger from "../Logger/Logger.js";
  *
  * @param {string} $filename
  * @param {ProjectConfig} $config
+ * @param {{Logger: Logger, reload: Function, removeStyleCaches: Function}} $App
  * @constructor
  */
-const SourceFileBuilder = function($filename, $config) {
+const SourceFileBuilder = function($filename, $config, $App) {
 
     const $dirname = Path.dirname($filename);
 
@@ -24,16 +25,17 @@ const SourceFileBuilder = function($filename, $config) {
         style: null,
         view: null
     };
+
     const $files = { templateUrl: null, styleUrl: null };
 
     const executePlugins = async function(type, sourceCode) {
         const plugins = $config.getPlugins(type);
         for await (const plugin of plugins) {
             if(typeof plugin.callback === 'function' && plugin.callback.constructor.name === 'AsyncFunction') {
-                sourceCode = await plugin.callback(sourceCode, plugin.options || {});
+                sourceCode = await plugin.callback(sourceCode, plugin.options || {}, $App);
                 continue;
             }
-            sourceCode = plugin.callback(sourceCode, plugin.options || {});
+            sourceCode = plugin.callback(sourceCode, plugin.options || {}, $App);
         }
         return sourceCode;
     };
@@ -191,6 +193,12 @@ const SourceFileBuilder = function($filename, $config) {
 
     this.getComponentName = function() {
         return $description.name;
+    };
+
+    this.removeCache = (type) => {
+        if(type === FILE_SOURCE_STYLE_TYPE) {
+            $buildCodes.style = null;
+        }
     };
 
 };

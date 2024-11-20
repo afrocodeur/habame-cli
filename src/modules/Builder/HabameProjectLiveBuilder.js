@@ -26,6 +26,7 @@ const HabameProjectLiveBuilder = function($config) {
         const entryHtml = Path.resolve($config.getEntryHtml());
         let contentHtml = Fs.readFileSync(entryHtml, 'utf8');
         const dependencies = await $scriptBuilder.getDependenciesScript(ScriptCodeBuilder.DEPENDENCES_DEFAULT_OPTION);
+        const globals = await $scriptBuilder.getGlobalFunctionsScript(ScriptCodeBuilder.GLOBALS_DEFAULT_OPTION, true);
         const appScript = await $scriptBuilder.getScript(false);
         const appStyles = await $scriptBuilder.getStyles();
 
@@ -35,6 +36,7 @@ const HabameProjectLiveBuilder = function($config) {
 
         const sourceCode = `
             <script type="text/javascript" data-type="dependencies" >${dependencies}</script>\n
+            <script type="text/javascript" data-type="globals" >${globals}</script>\n
             <script type="text/javascript" >${appScript}</script>\n
             <script type="text/javascript" >${$wsClientCode}</script>\n
         `;
